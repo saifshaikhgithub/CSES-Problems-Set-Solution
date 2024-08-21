@@ -32,8 +32,8 @@ void lesgo()
         int node = it.second;
         int d = it.first;
 
-        // if (d > dist[node])
-        //     continue;
+        if (d > dist[node])
+            continue;
 
         for (auto &child : mp[node])
         {
