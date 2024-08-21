@@ -325,116 +325,191 @@
 // OPTIMISED SOLUTION --
 
 #include <bits/stdc++.h>
+#define endl "\n"
 using namespace std;
+#define int long long int
 
-#define rep(i, n) for (int i = 0; i < n; i++)
-#define pb push_back
+int n, m;
+vector<pair<int, int>> monster;
+vector<vector<int>> g;
+map<pair<int, int>, pair<int, int>> par_mp;
+pair<int, int> si, se;
+vector<pair<int, int>> moves = {{-1, 0}, {1, 0}, {0, 1}, {0, -1}};
 
-vector<int> dx = {1, -1, 0, 0};
-vector<int> dy = {0, 0, 1, -1};
+bool isValid(int x, int y, int timer)
+{
+    if (x < 0 or y < 0 or x >= n or y >= m)
+    {
+        return false;
+    }
+    if (g[x][y] <= timer)
+    {
+        return false;
+    }
+    return true;
+}
 
-int dist[1001][1001], d[1001][1001];
+bool isExcape(int x, int y, int timer)
+{
+    if (!isValid(x, y, timer))
+        return false;
+    if (x == 0 or y == 0 or
+        x == n - 1 or y == m - 1)
+        return true;
+    return false;
+}
 
-int main()
+bool bfs_escape()
+{
+    queue<pair<pair<int, int>, int>> q;
+    q.push(make_pair(si, 0));
+    par_mp[si] = {-1, -1};
+    while (!q.empty())
+    {
+        int cx = q.front().first.first;
+        int cy = q.front().first.second;
+        int timer = q.front().second;
+        timer++;
+        q.pop();
+        for (auto mv : moves)
+        {
+            int tx = cx + mv.first;
+            int ty = cy + mv.second;
+            if (isExcape(tx, ty, timer))
+            {
+                par_mp[{tx, ty}] = {cx, cy};
+                se = {tx, ty};
+                return true;
+            }
+            if (isValid(tx, ty, timer))
+            {
+                par_mp[{tx, ty}] = {cx, cy};
+                g[tx][ty] = timer;
+                q.push({{tx, ty}, timer});
+            }
+        }
+    }
+    return false;
+}
+
+void preprocess_lava_flow()
+{
+    queue<pair<pair<int, int>, int>> q;
+    for (auto m : monster)
+    {
+        q.push(make_pair(m, 0));
+    }
+    while (!q.empty())
+    {
+        int cx = q.front().first.first;
+        int cy = q.front().first.second;
+        int timer = q.front().second;
+        timer++;
+        q.pop();
+
+        for (auto mv : moves)
+        {
+            int tx = cx + mv.first;
+            int ty = cy + mv.second;
+            if (isValid(tx, ty, timer))
+            {
+                g[tx][ty] = timer;
+                q.push({{tx, ty}, timer});
+            }
+        }
+    }
+}
+
+int32_t main()
 {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
-
-    int n, m;
     cin >> n >> m;
-
-    vector<string> v(n);
-    rep(i, n)
+    g.resize(n);
+    for (int i = 0; i < n; ++i)
     {
-        cin >> v[i];
+        g[i].resize(m);
     }
 
-    int x, y, c1, c2;
-    queue<vector<int>> q;
-
-    rep(i, n)
+    for (int i = 0; i < n; ++i)
     {
-        rep(j, m)
+        for (int j = 0; j < m; ++j)
         {
-            if (v[i][j] == 'M')
-                q.push({i, j, 0});
-            if (v[i][j] == 'A')
-                c1 = i, c2 = j;
+            g[i][j] = INT_MAX;
         }
     }
 
-    x = c1, y = c2;
-    rep(i, 1001) rep(j, 1001) dist[i][j] = -1;
-
-    while (!q.empty())
+    for (int i = 0; i < n; ++i)
     {
-        auto curr = q.front();
-        q.pop();
-        int x = curr[0], y = curr[1], steps = curr[2];
-        if (x < 0 || x >= n || y < 0 || y >= m || v[x][y] == '#' || dist[x][y] != -1)
-            continue;
-        dist[x][y] = steps;
-        rep(i, 4)
+        for (int j = 0; j < m; ++j)
         {
-            int cx = x + dx[i], cy = y + dy[i];
-            q.push({cx, cy, steps + 1});
-        }
-    }
-
-    string ans;
-    while (!q.empty())
-        q.pop();
-    q.push({x, y, 0, 0});
-    rep(i, 1001) rep(j, 1001) d[i][j] = -1;
-
-    bool c = false;
-    int p[n + 1][m + 1];
-    memset(p, 0, sizeof(p));
-
-    while (!q.empty())
-    {
-        auto curr = q.front();
-        q.pop();
-        int x = curr[0], y = curr[1], steps = curr[2], dir = curr[3];
-        if (x < 0 || x >= n || y < 0 || y >= m || v[x][y] == '#' || d[x][y] != -1 || (dist[x][y] >= 0 && dist[x][y] <= steps))
-            continue;
-        if (x == n - 1 || y == m - 1 || x == 0 || y == 0)
-        {
-            p[x][y] = dir;
-            while (x != c1 || y != c2)
+            char c;
+            cin >> c;
+            if (c == '#')
             {
-                if (p[x][y] == 0)
-                    ans += 'L', y++;
-                else if (p[x][y] == 1)
-                    ans += 'R', y--;
-                else if (p[x][y] == 2)
-                    ans += 'U', x++;
-                else
-                    ans += 'D', x--;
+                g[i][j] = 0;
             }
-            reverse(ans.begin(), ans.end());
-            c = true;
-            break;
+            else if (c == 'M')
+            {
+                g[i][j] = 0;
+
+                monster.push_back({i, j});
+            }
+            else if (c == 'A')
+            {
+                g[i][j] = 0;
+                si = {i, j};
+            }
+            else
+            {
+                g[i][j] = INT_MAX;
+            }
         }
-        d[x][y] = steps;
-        p[x][y] = dir;
-        rep(i, 4)
+    }
+    if (si.first == 0 or si.second == 0 or si.first == n - 1 or si.second == m - 1)
+    {
+        cout << "YES" << endl;
+        cout << 0;
+        return 0;
+    }
+    preprocess_lava_flow();
+
+    if (!bfs_escape())
+    {
+        cout << "NO";
+        return 0;
+    }
+    cout << "YES" << endl;
+    pair<int, int> tmp = se;
+    pair<int, int> tmp1 = par_mp[se];
+    pair<int, int> ed = {-1, -1};
+    vector<char> ans;
+    while (tmp1 != ed)
+    {
+
+        if ((tmp.second - tmp1.second) == 1 and (tmp.first - tmp1.first) == 0)
         {
-            int cx = x + dx[i], cy = y + dy[i];
-            q.push({cx, cy, steps + 1, i});
+            ans.push_back('R');
         }
+        if ((tmp.second - tmp1.second) == -1 and (tmp.first - tmp1.first) == 0)
+        {
+            ans.push_back('L');
+        }
+        if ((tmp.second - tmp1.second) == 0 and (tmp.first - tmp1.first) == 1)
+        {
+            ans.push_back('D');
+        }
+        if ((tmp.second - tmp1.second) == 0 and (tmp.first - tmp1.first) == -1)
+        {
+            ans.push_back('U');
+        }
+        tmp = par_mp[tmp];
+        tmp1 = par_mp[tmp];
     }
-
-    if (c)
+    reverse(ans.begin(), ans.end());
+    cout << ans.size() << endl;
+    for (auto c : ans)
     {
-        cout << "YES" << endl
-             << ans.size() << endl
-             << ans;
+        cout << c;
     }
-    else
-    {
-        cout << "NO" << endl;
-    }
-
-    return 0;
 }
