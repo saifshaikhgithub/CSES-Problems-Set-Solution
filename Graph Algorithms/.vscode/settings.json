@@ -5,6 +5,11 @@
         "limits": "cpp",
         "valarray": "cpp",
         "vector": "cpp",
-        "climits": "cpp"
+        "climits": "cpp",
+        "array": "cpp",
+        "bitset": "cpp",
+        "initializer_list": "cpp",
+        "regex": "cpp",
+        "utility": "cpp"
     }
 }
